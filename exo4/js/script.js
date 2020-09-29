@@ -1,70 +1,113 @@
 // INIT
 
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
-camera.position.z = 5;
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+// camera.position.z = 10;
+camera.position.set(-5, 0, 25)
 
-let renderer = new THREE.WebGLRenderer();
+var renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-let geometry = new THREE.BoxGeometry();
-let texture = new THREE.TextureLoader().load( "./img.jpeg" );
-let material = new THREE.MeshStandardMaterial( { map: texture} );
-// var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-let cube = new THREE.Mesh( geometry, material );
+var geometry = new THREE.BoxGeometry();
+var material = new THREE.MeshBasicMaterial( { color: 0xffffff } );
+var cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
-cube.position.set(-2,0,0)
-cube.name = "cube1"
+cube.name = "cube"
+cube.position.set(0, 0, 15)
 
-let geometry2 = new THREE.DodecahedronBufferGeometry(1,5);
-
-let material2 = new THREE.MeshStandardMaterial( { map: texture} );
-let cube2 = new THREE.Mesh( geometry2, material2 );
-scene.add( cube2 );
-cube2.position.set(2,0,0)
-cube2.name = "cube2"
-
-
-let activeLight1 = true
-let activeLight2 = true
-
-// LIGHTS 
-
-
-let light = new THREE.PointLight( 0xffffff, 3, 3 );
-light.position.set( -2, 1, 1 );
-scene.add( light );
-light.name = "Light1"
-
-let ligh2 = new THREE.PointLight( 0xffffff, 3, 3 );
-ligh2.position.set( 2, 1, 1 );
-scene.add( ligh2 );
-ligh2.name = "Light2"
-
+createGeometry()
 
 const controls = new THREE.OrbitControls(camera);
-controls.enableDamping = true;   //damping 
-controls.dampingFactor = .25;   //damping inertia
-controls.enableZoom = true;      //Zooming
-controls.autoRotate = false;       // enable rotation
-controls.maxPolarAngle = Math.PI / 2; // Limit angle of visibility
-
-let raycaster, mouse = { x : 0, y : 0 };
-raycaster = new THREE.Raycaster();
-renderer.domElement.addEventListener( 'click', raycast, false );
 
 controls.addEventListener("change", () => {
     if (this.renderer) this.renderer.render(this.scene, camera);
 });
 
+
+let raycaster, mouse = { x : 0, y : 0 };
+raycaster = new THREE.Raycaster();
+renderer.domElement.addEventListener( 'click', raycast, false );
+
+
+
 window.addEventListener( 'resize', onWindowResize, false );
+
+let moveCamera = false
 
 // INIT END
 
+
+// Create a sine-like wave
+var curve = new THREE.CatmullRomCurve3( [
+	new THREE.Vector3( -10, 5, 30 ),
+	new THREE.Vector3( -5, 5, 30 ),
+	new THREE.Vector3( 0, 0, 15  ),
+	new THREE.Vector3( 10, 0, -15 ),
+    new THREE.Vector3( 15, -10, -15 ),
+    new THREE.Vector3( 20, 5, 15 ),
+    new THREE.Vector3( -10, 5, 20 ),
+    new THREE.Vector3( -15, 5, 25 ),
+    new THREE.Vector3( -13, 5, 30 )
+] );
+
+function move () {
+    curve.points.forEach(position => {
+        console.log(position); 
+    });
+}
+
+// console.log(curve.points);
+
+var points = curve.getPoints( 50 );
+var geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+var material = new THREE.LineBasicMaterial( { color : 0xffffff } );
+
+// Create the final object to add to the scene
+var splineObject = new THREE.Line( geometry, material );
+scene.add(splineObject)
+
+var camPosIndex = 0;
+var randomPoints = [];
+
+for ( var i = 0; i < 10; i ++ ) {
+    randomPoints.push(
+
+        new THREE.Vector3( -10, 5, 30 ),
+        new THREE.Vector3( -5, 5, 30 ),
+        new THREE.Vector3( 0, 0, 15  ),
+        new THREE.Vector3( 10, 0, -15 ),
+        new THREE.Vector3( 15, -10, -15 ),
+        new THREE.Vector3( 20, 5, 15 ),
+        new THREE.Vector3( -10, 5, 20 ),
+        new THREE.Vector3( -15, 5, 25 ),
+        new THREE.Vector3( -13, 5, 30 )
+        // new THREE.Vector3(Math.random() * 200 , Math.random() * 200 , Math.random() * 200 )
+    );
+}
+var spline = new THREE.SplineCurve3(randomPoints);
+
 // FUNCTIONS
 
-
+// CREATE STARS
+function createGeometry() {
+    createStars()
+}
+function createStars() {
+    for (var i = 0; i < 400; i++) {
+        var b = new THREE.Mesh(
+            new THREE.BoxGeometry(1,1,1),
+            new THREE.MeshBasicMaterial({color: "#EEEDDD"})
+        );
+        
+        b.position.x = -300 + Math.random() * 600;
+        b.position.y = -300 + Math.random() * 600;  
+        b.position.z = -300 + Math.random() * 600;
+        
+        scene.add(b);
+    }
+}
 
 function raycast ( e ) {
     mouse.x = ( e.clientX / window.innerWidth ) * 2 - 1;
@@ -78,36 +121,12 @@ function raycast ( e ) {
 
     for ( var i = 0; i < intersects.length; i++ ) {
         // console.log( intersects[ i ] ); 
-
-        scene.traverse( child  => {
-
-            if (child.type = "Mesh") {
-
-                if (intersects[i].object === child) {
-
-                    if (intersects[i].object.name === "cube1") {
-                        if (activeLight1 === true){
-                            scene.children[2].intensity = 0.8
-                            activeLight1 = false
-                        } 
-                        else {
-                            scene.children[2].intensity = 3
-                            activeLight1 = true
-                        }
-                    }
-                    if (intersects[i].object.name === "cube2") {
-                        if (activeLight2 === true){
-                            scene.children[3].intensity = 0.8
-                            activeLight2 = false
-                        } 
-                        else {
-                            scene.children[3].intensity = 3
-                            activeLight2 = true
-                        }
-                    }
-                }
-            }
-        })
+        // move()
+        if (intersects[i].object.name === "cube") {
+            moveCamera = true
+        }
+        else {
+        }
     }
 }
 
@@ -120,10 +139,36 @@ function onWindowResize(){
 var animate = function () {
     requestAnimationFrame( animate );
 
-    
-    // cube.rotation.x += 0.01;
+    cube.rotation.x += 0.01;
     cube.rotation.y += 0.01;
 
+    
+    camPosIndex++;
+    if (camPosIndex > 10000) {
+        camPosIndex = 0;
+    }
+
+    var camPos = spline.getPoint(camPosIndex / 10000);
+    var camRot = spline.getTangent(camPosIndex / 10000);
+
+    if (moveCamera === true) {
+        cube.position.x = camPos.x;
+        cube.position.y = camPos.y;
+        cube.position.z = camPos.z;
+
+        // cube.rotation.y = camRot.y;
+        // cube.rotation.z = camRot.z;
+
+        camera.position.x = camPos.x 
+        camera.position.y = camPos.y + 2
+        camera.position.z = camPos.z + 10
+
+        // camera.rotation.x = 10
+
+        // camera.rotation.x = camRot.x;
+        // camera.rotation.y = camRot.y;
+        camera.rotation.z = camRot.z;
+    }
     renderer.render( scene, camera );
 };
 
